@@ -1,0 +1,7 @@
+* {
+  box-sizing: border-box;
+} /*"border-box" means that the width and height properties (and min/max properties) include content, padding and border*/
+
+#outputCanvas {
+  border: solid black 1px;
+}
