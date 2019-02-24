@@ -4,13 +4,16 @@ let imageData;
 let mouseX;
 let mouseY;
 let mapData;
+let data;
+let data2;
 const imageCanvas = document.getElementById("imageCanvas");
 const mapCanvas = document.getElementById("mapCanvas");
 const outputCanvas = document.getElementById("outputCanvas");
 const ctxImage = imageCanvas.getContext("2d"); //context object draws on canvas
 const ctxMap = mapCanvas.getContext("2d");
-const outputContext = outputCanvas.getContext("2d");
-let outputData = outputContext.createImageData(500, 600);
+const ctxOutput = outputCanvas.getContext("2d");
+let outputData = ctxOutput.createImageData(500, 600);
+const MAX_MOVEMENT = 10;
 
 function init() {
   img = new Image();
@@ -50,16 +53,17 @@ function getImageData() {
 function getMapData() {
   const w = mapCanvas.width;
   const h = mapCanvas.height;
-  imageData = ctxImage.getImageData(0, 0, w, h);
-  data = imageData.data;
+  mapData = ctxImage.getImageData(0, 0, w, h);
+  data2 = mapData.data;
+  //console.log(data2);
 }
 
 function registerMouseMove() {
   mouseX = event.offsetX;
   mouseY = event.offsetY;
   //console.log("offset", mouseX, mouseY);
-  calculateRatio(mouseX, mouseY);
-  let [mouseXratio, mouseYratio] = calculateRatio(mouseX, mouseY);
+  //calculateRatio(mouseX, mouseY);
+  //let [mouseXratio, mouseYratio] = calculateRatio(mouseX, mouseY);
   render();
 }
 
@@ -89,7 +93,34 @@ function copyPixels(startX, startY) {
   }
 }
 
+function copyDisplacementPixels(startX, startY) {
+  const mouseXratio = (startX / outputCanvas.width) * 2 - 1; //Liczy od 0 do 1, ale potrzebne jest od -1 do 1, więc mnoży się przez 2 i wtedy odejmuje się 1 o będzie od -1 do 1
+  const mouseYratio = (startY / outputCanvas.height) * 2 - 1;
+  let displacementX = MAX_MOVEMENT * mouseXratio; //displacement
+  let displacementY = MAX_MOVEMENT * mouseYratio;
+
+  const w = outputCanvas.width;
+  //const imageW = ctx.canvas.width;
+
+  for (let y = 0; y < 10; y++) {
+    for (let x = 0; x < 10; x++) {
+      const pixelIndex = (x + y * w) * 4; //small canvas
+      //console.log(x + "|" + y + "|" + w);
+      const greyvalue = mapData.data[pixelIndex] / 255;
+      offsetX = Math.round(x + displacementX * greyvalue);
+      offsetY = Math.round(y + displacementY * greyvalue);
+      const originalPixelIndex = (offsetY * w + offsetX) * 4;
+      //console.log(greyvalue);
+      outputData.data[pixelIndex + 0] = imageData.data[originalPixelIndex + 0];
+      outputData.data[pixelIndex + 1] = imageData.data[originalPixelIndex + 1];
+      outputData.data[pixelIndex + 2] = imageData.data[originalPixelIndex + 2];
+      outputData.data[pixelIndex + 3] = imageData.data[originalPixelIndex + 3];
+    }
+  }
+}
+
 function render() {
-  copyPixels(mouseX, mouseY);
-  outputContext.putImageData(outputData, 0, 0);
+  copyDisplacementPixels(mouseX, mouseY);
+  //console.log(outputData);
+  ctxOutput.putImageData(outputData, 0, 0);
 }
